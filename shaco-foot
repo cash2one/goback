@@ -1,0 +1,161 @@
+#!/bin/bash
+
+SERVERS="db game gate"
+VLOGDIR=$HOME/vallog
+
+error() {
+    echo -ne "\033[40;31;1m"
+    echo "$@"
+    echo -ne "\033[0m"
+}
+info() {
+    echo -ne "\033[40;32;1m"
+    echo "$@"
+    echo -ne "\033[0m"
+}
+count() {
+    NSERVER=1
+    for s in $SERVERS;do
+        NSERVER=$(($NSERVER+1))
+    done
+}
+ls() {
+    ps -u ${USER} u |grep shaco |grep config
+    local n=`ps -u ${USER} u |grep shaco |grep config |wc -l`
+    #if [ ${n} -eq $NSERVER ] 
+    #then
+        #info "node count [${n}] OK"
+    #else
+        #error "node count [${n} != ${NSERVER}] FAIL"
+    #fi
+}
+startone() {
+    cd bin
+    if [ $MEMCHECK -eq 0 ]
+    then
+        info "start ${1}"
+        ./shaco config_${1}.lua --daemon 1
+    else
+        info "start-memcheck ${1}"
+        valgrind -v \
+        --leak-check=full \
+        --track-origins=yes \
+        --suppressions=shaco.supp \
+        --log-file=$VLOGDIR/${1}.%p.vallog \
+        ./shaco config_${1}.lua --daemon 1
+    fi
+    cd ..
+    sleep ${2}
+}
+stopone() {
+    local list="ps -u ${USER} u |grep shaco |grep config_${1}.lua"
+    info -n "stop ${1}"
+    
+    local n=`eval "${list} |wc -l"`
+    if [ ${n} -eq 0 ]
+    then
+        error " NONE"
+        return
+    fi
+
+    local a=`eval "${list} | awk -F' ' '{print \\$2}'"`
+    OLD_IFS="$IFS"
+    IFS=$"\n"
+    arr=($a)
+    IFS="$OLD_IFS"
+    for pid in ${arr[@]}
+    do
+        printf " $pid"
+        while [ 1 ]
+        do
+            if [ -d /proc/$pid ]
+            then
+                kill -2 $pid
+                sleep ${2}
+            else
+                break
+            fi
+        done
+    done
+    info " OK"
+}
+startcmdd() {
+    cd bin && ./shaco config_commandd.lua --daemon 1
+    ps -u ${USER} u |grep commandd |grep shaco
+}
+startall() {
+    startone center 2
+    for S in $SERVERS;do
+        startone $S 0.5
+    done
+    sleep 1
+    ls
+}
+start() {
+    for S in $@;do
+        startone $S 0.5
+    done
+    ls
+}
+stopall() {
+    local col=12
+    if [ $MEMCHECK -ne 0 ]
+    then
+        col=19
+    fi
+    local list="ps -u ${USER} u |grep shaco |grep config |awk -F ' ' '{print \$$col}'"
+    local a=`eval "${list}"`
+    OLD_IFS="$IFS"
+    IFS=$'\n'
+    arr=($a)
+    IFS="$OLD_IFS"
+    for one in ${arr[@]}
+    do
+        one=${one#config_}
+        one=${one%.lua}
+        stopone $one 0.1
+    done
+}
+stop() {
+    for one in $@;do
+        stopone $one 0.1
+    done
+}
+stopcmdd() {
+    stopone commandd 0.1
+}
+
+USAGE="Usage: shaco-foot [cmd] [startall] [start [svr .. ]] [stop [svr ..]] [ls] [startcmdd] [stopcmdd] [dist] -m"
+MEMCHECK=0
+CMD=$1
+shift
+while getopts ":m" optname
+do
+    case "$optname" in
+    "m")
+        MEMCHECK=1
+        shift
+        mkdir -pv $VLOGDIR
+        echo [memcheck mode]
+        ;;
+    *)
+        #echo shout not be here
+        ;;
+    esac
+done
+
+count
+case "$CMD" in
+restartall)     stop center;stop $SERVERS;startall;;
+restart)        stop "$@";start "$@";;
+startall)       startall;;
+start)          start "$@";;
+stopall)        stop center;stop $SERVERS;;
+stop)           stop "$@";;
+startcmdd)      startcmdd;;
+stopcmdd)       stopcmdd;;
+ls)             ls;;
+cmd)            ./bin/shaco-cli --addr 127.0.0.1:18001 --cmd "$@";;
+dist)           svn up && make res && make clean && make;;
+*)              echo $USAGE;;
+esac
