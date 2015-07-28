@@ -35,6 +35,8 @@ local function __collect_up_f(f, name, upold, upnew, ups)
         end
         if upv == upold then
             tinsert(ups, {f, i, upnew, name, upn})
+        elseif type(upv) == "function" then
+            __collect_up_f(upv, upn, name, upold, upnew, ups)
         end
         i = i+1
     end
