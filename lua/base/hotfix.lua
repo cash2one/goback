@@ -12,6 +12,7 @@ local assert = assert
 local type = type
 
 local hotfix = {}
+local __cache 
 
 local function __getupvaluei(f, name)
     local i=1
@@ -27,6 +28,9 @@ local function __getupvaluei(f, name)
 end
 
 local function __collect_up_f(f, name, upold, upnew, ups)
+    if __cache[name] then
+        return
+    end
     local i = 1
     while true do
         local upn, upv = dgetupvalue(f, i)
@@ -43,6 +47,9 @@ local function __collect_up_f(f, name, upold, upnew, ups)
 end
 
 local function __collect_up_t(t, name, upold, upnew, ups)
+    if __cache[name] then
+        return
+    end
     for k, v in pairs(t) do
         local fulln = name.."."..k
         if type(v) == "table" then
@@ -56,6 +63,7 @@ end
 local function __collect_up_all(upold, upnew)
     local ups = {}
     for k, p in pairs(package.loaded) do
+        __cache = {}
         local fulln = k
         if type(p) == "table" then
             __collect_up_t(p, fulln, upold, upnew, ups)
