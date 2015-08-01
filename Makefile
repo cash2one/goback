@@ -192,7 +192,6 @@ clean:
 cleanall: clean
 	cd 3rd/lua && make clean
 	cd 3rd/jemalloc && make clean
-	cd 3rd/openssl && make clean
 	rm -rf cscope.* tags
 	rm -rf bin/*.lso
 	rm -rf tool/*.sl
