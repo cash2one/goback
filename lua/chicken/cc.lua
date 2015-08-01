@@ -11,11 +11,12 @@ shaco.start(function()
     socket.readenable(id, true)
 
     local function rpc(s)
-        socket.send(id, s)
-        local r = true
+        print ("[send] "..s)
+        assert(socket.send(id, s))
+        local r = assert(socket.read(id, "*l"))
         while r ~= "chicken node>" do
-            r = assert(socket.read(id, "*l"))
             print(r)
+            r = assert(socket.read(id, "*l"))
         end
     end
     
@@ -23,7 +24,7 @@ shaco.start(function()
         rpc(single_command)
         os.exit(1)
     end
-    rpc("hi")
+    rpc("hi\n")
     linenoise.loadhistory(history_file)
     while true do
         local s = linenoise.linenoise("> ")
@@ -33,7 +34,19 @@ shaco.start(function()
         end
         s = string.match(s, "^%s*(.-)%s*$")
         if s ~= "" then
-            rpc(s)
+            local ok, err = pcall(rpc, s..'\n')
+            if not ok then
+                print (err)
+                socket.close(id)
+                id, err = socket.connect(ip, tonumber(port))
+                if id then
+                    print ("[reconnect] ok")
+                    socket.readenable(id, true)
+                    rpc(s..'\n')
+                else
+                    print("[reconnect] "..err)
+                end
+            end
             linenoise.addhistory(s)
         end
     end

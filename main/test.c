@@ -124,120 +124,6 @@ void test(int times) {
     assert(pop(h,&n2));
 }
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <openssl/bn.h>
-#include <openssl/rsa.h>
-#include <openssl/pem.h>
-#include <openssl/err.h>
- 
-int test_rsa(int times) {
-    //FILE* fp;
-    //RSA* rsa1;
-/* 
-    // check usage
-    if (argc != 2) {
-        fprintf(stderr, "%s <RSA private key param file>\n", argv[0]);
-        exit(-1);
-    }
- 
-    // open the RSA private key PEM file 
-    fp = fopen(argv[1], "r");
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to open %s for RSA priv params\n", argv[1]);
-        return NULL;
-    }
-    if ((rsa1 = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL)) == NULL) {
-        fprintf(stderr, "Unable to read private key parameters\n");
-        return NULL;
-    }                                                         
-    fclose(fp);
- 
-    // print 
-    printf("Content of Private key PEM file\n");
-    RSA_print_fp(stdout, rsa1, 0);
-    printf("\n");    
-*/ 
-/* 
-    RSA* rsa2;
- 
-    // open the RSA public key PEM file
-    fp = fopen(argv[2], "r");
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to open %s for RSA pub params\n", argv[1]);
-        return NULL;
-    }
-    if ((rsa2 = PEM_read_RSA_PUBKEY(fp, NULL, NULL, NULL)) == NULL) {
-        fprintf(stderr, "Unable to read public key parameters\n");
-        return NULL;
-    }                                                         
-    fclose(fp);
- 
-    printf("Content of Public key PEM file\n");
-    RSA_print_fp(stdout, rsa2, 0);
-    printf("\n");    
-    */
-    return 0;
-}
-
-typedef unsigned char BYTE;
-
-RSA* read_rsa(const char *file, int public) {
-    //const char *file = "/Users/wale/.ssh/test_rsa.pub";
-    //const char *file = "./rsakey0.pub";
-    BIO *out = BIO_new_file(file, "rb");
-    assert(out);
-    
-    RSA* rsa;
-    if (public) {
-        rsa = PEM_read_bio_RSA_PUBKEY(out, NULL, NULL, NULL);
-    } else {
-        rsa = PEM_read_bio_RSAPrivateKey(out, NULL, NULL, NULL);
-    }
-    //RSA* rsa = PEM_read_bio_RSAPublicKey(out, NULL, NULL, NULL);
-
-    ERR_print_errors_fp(stdout); 
-    printf("%p, Content of Public key PEM file\n", rsa);
-    RSA_print_fp(stdout, rsa, 0);
-    printf("\n");    
-
-    BIO_free(out);
-    return rsa;
-}
-int test_rsa2(int times) {
-    //RSA* rsa = RSA_new();
-    //BIGNUM *bne = BN_new();
-    //BN_set_word(bne, RSA_F4);
-    //RSA_generate_key_ex(rsa, 1024 ,bne,NULL);
-
-    RSA* rsa_pri = read_rsa("./rsakey0.pem", 0);
-    RSA* rsa_pub = read_rsa("./rsakey0.pub", 1);
-
-    char sz[]="abcdefg";
-    int len = RSA_size(rsa_pri);
-    BYTE* p = malloc(len);
-    memset(p,0,len);
-    printf("encrypt:%s, %d\n",sz, len);
-
-    int outlen = RSA_size(rsa_pub)-11;
-    char *out = malloc(outlen);
-    memset(out, 0, outlen);
-    
-    int r = RSA_private_encrypt(sizeof(sz), (unsigned char*)sz, p, rsa_pri, RSA_PKCS1_PADDING);
-    assert(r!=-1);
-    r = RSA_public_decrypt(len,p, (unsigned char*)out, rsa_pub, RSA_PKCS1_PADDING);
-    assert(r!=-1);
-    //RSA_public_encrypt(sizeof(sz), (unsigned char *)sz, p, rsa, RSA_PKCS1_PADDING);
-    //RSA_private_decrypt(len ,p , (unsigned char *)out, rsa, RSA_PKCS1_PADDING);
-    printf("decrypt:%s, %d\n",out, outlen);
-    free(p);
-    free(out);
-    RSA_free(rsa_pri);
-    RSA_free(rsa_pub);
-    return 0;
-}
-
 void test2(int time) {
     uint64_t n = 0;
     int i;
@@ -254,7 +140,6 @@ main(int argc, char* argv[]) {
         times = strtol(argv[1], NULL, 10);
 
     uint64_t t1 = _elapsed();
-    //test_rsa2(times);
     test2(times);
     uint64_t t2 = _elapsed();
     printf("main use time %d, run times=%d\n", (int)(t2-t1), times);
