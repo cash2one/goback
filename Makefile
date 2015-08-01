@@ -97,9 +97,9 @@ $(JEMALLOC_A): 3rd/jemalloc/Makefile
 	cd 3rd/jemalloc && ./autogen.sh --with-jemalloc-prefix=je_ --enable-cc-silence --disable-valgrind
 
 # openssl
-CRYPTO_A=3rd/openssl/libcrypto.a
-$(CRYPTO_A): 3rd/openssl/Makefile
-	cd 3rd/openssl && make libcrypto.a
+#CRYPTO_A=3rd/openssl/libcrypto.a
+#$(CRYPTO_A): 3rd/openssl/Makefile
+#	cd 3rd/openssl && make libcrypto.a
 
 # shaco
 $(mod_so): $(BIN_DIR)/%.so: $(MOD_DIR)/%.c
@@ -142,7 +142,7 @@ $(BIN_DIR)/util.so: lshaco/lutil.c
 	@rm -f $@
 	gcc $(CFLAGS) $(SHARED) -o $@ $^ $(ISHACO) $(ILUA)
 
-$(BIN_DIR)/crypt.so: lshaco/lcrypt.c lshaco/lsha1.c $(CRYPTO_A)
+$(BIN_DIR)/crypt.so: lshaco/lcrypt.c lshaco/lsha1.c 
 	@rm -f $@
 	gcc $(CFLAGS) $(SHARED) -o $@ $^ $(ISHACO) $(ILUA) 
 
@@ -157,7 +157,7 @@ $(BIN_DIR)/md5.so: 3rd/lua-md5/md5lib.c 3rd/lua-md5/md5.c 3rd/lua-md5/compat-5.2
 $(BIN_DIR)/shaco: main/shaco.c $(LIBSHACO_SRC) $(LUA_A) $(JEMALLOC_A)
 	gcc $(CFLAGS) $(EXPORT) -o $@ $^ $(ISHACO) $(ILUA) $(IJEMALLOC) $(LDLIB) -lpthread
 
-$(BIN_DIR)/test: main/test.c $(CRYPTO_A)
+$(BIN_DIR)/test: main/test.c
 	gcc $(CFLAGS) -o $@ $^ $(LDLIB)
 
 $(BIN_DIR)/shaco-cli: tool/shaco-cli.c
