@@ -80,8 +80,8 @@ local function controller()
                 print ("[login] controller")
                 local cmd, ret
                 while true do
-                    cmd = socket_assert((socket.read(id, "*l")))
-                    print ("[cmd read] "..cmd)
+                    cmd = socket_assert((socket.read(id, "\r\n")))
+                    print ("[cmd read] "..cmd, #cmd)
                     table.insert(C, cmd)
                     socket.readenable(id, false)
                     while CN do
@@ -89,7 +89,7 @@ local function controller()
                         if ret == 0 then -- end of package
                             break
                         elseif ret then
-                            socket_assert((socket.send(id, ret..'\n')))
+                            socket_assert((socket.send(id, ret..'\r\n')))
                         else 
                             shaco.sleep(1)
                         end
