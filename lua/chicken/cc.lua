@@ -11,7 +11,7 @@ shaco.start(function()
     socket.readenable(id, true)
 
     local function rpc(s)
-        print ("[send] "..s)
+        --print ("[send] "..s)
         assert(socket.send(id, s))
         local r = assert(socket.read(id, "*l"))
         while r ~= "chicken node>" do
