@@ -66,6 +66,27 @@ local function host()
     end)
 end
 
+local WAIT_RET = false
+
+local function response(id)
+    if CN then
+        while CN do
+            local ret = table.remove(R,1)
+            if ret == 0 then -- end of package
+                break
+            elseif ret then
+                socket_assert((socket.send(id, ret..'\r\n')))
+            else 
+                shaco.sleep(1)
+            end
+        end
+    else
+        socket_assert(socket.send(id, "[X] chicken disconected\r\n"))
+    end
+    WAIT_RET = false -- end of package or CN disconnected
+    socket_assert(socket.send(id, "chicken node>\r\n"))
+end
+
 local function controller()
     local host = shaco.getenv("controller") or "127.0.0.1:7997"
     local ip, port = host:match("^([^:]+):?(%d+)$")
@@ -74,6 +95,12 @@ local function controller()
     socket.start(lid, function(id)
         socket.readenable(lid, false)
         shaco.fork(function()
+            socket_assert((socket.send(id, "welcome to CH\r\n")))
+            if WAIT_RET then
+                response(id)
+            else
+                socket_assert(socket.send(id, "chicken node>\r\n"))
+            end
             local ok, err = pcall(function()
                 socket.start(id)
                 socket.readenable(id, true)
@@ -84,20 +111,8 @@ local function controller()
                     print ("[cmd read] "..cmd, #cmd)
                     table.insert(C, cmd)
                     socket.readenable(id, false)
-                    while CN do
-                        local ret = table.remove(R,1)
-                        if ret == 0 then -- end of package
-                            break
-                        elseif ret then
-                            socket_assert((socket.send(id, ret..'\r\n')))
-                        else 
-                            shaco.sleep(1)
-                        end
-                    end
-                    if not CN then
-                        socket_assert(socket.send(id, "[X] chicken disconected\n"))
-                    end
-                    socket_assert(socket.send(id, "chicken node>\n"))
+                    WAIT_RET = true
+                    response(id)
                     socket.readenable(id, true)
                     print ("[ret send] ok")
                 end
