@@ -84,7 +84,6 @@ local function response(id)
         socket_assert(socket.send(id, "[X] chicken disconected\r\n"))
     end
     WAIT_RET = false -- end of package or CN disconnected
-    socket_assert(socket.send(id, "chicken node>\r\n"))
 end
 
 local function controller()
@@ -98,9 +97,8 @@ local function controller()
             socket_assert((socket.send(id, "welcome to CH\r\n")))
             if WAIT_RET then
                 response(id)
-            else
-                socket_assert(socket.send(id, "chicken node>\r\n"))
             end
+            socket_assert(socket.send(id, "chicken node>\r\n"))
             local ok, err = pcall(function()
                 socket.start(id)
                 socket.readenable(id, true)
@@ -108,13 +106,16 @@ local function controller()
                 local cmd, ret
                 while true do
                     cmd = socket_assert((socket.read(id, "\r\n")))
-                    print ("[cmd read] "..cmd, #cmd)
-                    table.insert(C, cmd)
                     socket.readenable(id, false)
-                    WAIT_RET = true
-                    response(id)
+                    if #cmd > 0 then
+                        print ("[cmd read] "..cmd, #cmd)
+                        table.insert(C, cmd)
+                        WAIT_RET = true
+                        response(id)
+                        print ("[ret send] ok")
+                    end
+                    socket_assert(socket.send(id, "chicken node>\r\n"))
                     socket.readenable(id, true)
-                    print ("[ret send] ok")
                 end
             end)
             if not ok then
