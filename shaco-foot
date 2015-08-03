@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVERS="db game gate"
+SERVERS="game"
 VLOGDIR=$HOME/vallog
 
 error() {
@@ -14,7 +14,7 @@ info() {
     echo -ne "\033[0m"
 }
 count() {
-    NSERVER=1
+    NSERVER=0
     for s in $SERVERS;do
         NSERVER=$(($NSERVER+1))
     done
@@ -22,33 +22,35 @@ count() {
 ls() {
     ps -u ${USER} u |grep shaco |grep config
     local n=`ps -u ${USER} u |grep shaco |grep config |wc -l`
-    #if [ ${n} -eq $NSERVER ] 
-    #then
-        #info "node count [${n}] OK"
-    #else
-        #error "node count [${n} != ${NSERVER}] FAIL"
-    #fi
+    if [ ${n} -eq $NSERVER ] 
+    then
+        info "node count [${n}] OK"
+    else
+        error "node count [${n} != ${NSERVER}] FAIL"
+    fi
+    #ps -u ${USER} u |grep commandd |grep lua
 }
 startone() {
     cd bin
     if [ $MEMCHECK -eq 0 ]
     then
         info "start ${1}"
-        ./shaco config_${1}.lua --daemon 1
+        ./shaco config_${1} --daemon 1
     else
         info "start-memcheck ${1}"
         valgrind -v \
         --leak-check=full \
+        --show-reachable=yes \
         --track-origins=yes \
         --suppressions=shaco.supp \
         --log-file=$VLOGDIR/${1}.%p.vallog \
-        ./shaco config_${1}.lua --daemon 1
+        ./shaco config_${1} --daemon 1
     fi
     cd ..
     sleep ${2}
 }
 stopone() {
-    local list="ps -u ${USER} u |grep shaco |grep config_${1}.lua"
+    local list="ps -u ${USER} u |grep shaco |grep config_${1}"
     info -n "stop ${1}"
     
     local n=`eval "${list} |wc -l"`
@@ -80,11 +82,17 @@ stopone() {
     info " OK"
 }
 startcmdd() {
-    cd bin && ./shaco config_commandd.lua --daemon 1
-    ps -u ${USER} u |grep commandd |grep shaco
+    cd bin && 2>&1 ./shaco config_commandd --daemon 1
+    ps -u ${USER} u |grep commandd
+}
+startcn() {
+    cd bin && 2>&1 ./shaco config_test --luamod cn --host 120.131.70.4:7998 --daemon 1 > cn.log
+}
+
+startch() {
+    cd bin && 2>&1 ./shaco config_test --luamod ch --daemon 1 > ch.log
 }
 startall() {
-    startone center 2
     for S in $SERVERS;do
         startone $S 0.5
     done
@@ -112,7 +120,7 @@ stopall() {
     for one in ${arr[@]}
     do
         one=${one#config_}
-        one=${one%.lua}
+        one=${one%}
         stopone $one 0.1
     done
 }
@@ -122,7 +130,41 @@ stop() {
     done
 }
 stopcmdd() {
-    stopone commandd 0.1
+    stopone commandd 0.1 
+}
+
+deploy() {
+    local IP=120.131.70.4
+    local PORT=22422
+    local USER=builder
+    local KEY=~/.ssh/id_rsa_coolsoft
+    local PAK=quanzhi-svr
+    #printf "Enter Password:"
+    #read -s PASSWORD 
+    local PASSWORD=111
+    rm -rf $PAK.tar
+    tar -cf $PAK.tar res bin lua sql shaco-foot shaco-init
+    expect scp.exp $IP $PORT $USER $PASSWORD $KEY /data/builder $PAK.tar
+    rm -rf $PAK.tar
+    expect ssh.exp $IP $PORT $USER $PASSWORD $KEY \
+    "[ -f bin/config_self ] && mv bin/config_self bin/config_self.bak;
+     tar -xf $PAK.tar;
+     [ -f bin/config_self.bak ] && mv bin/config_self.bak bin/config_self"
+}
+
+#tar -xf $PAK.tar && rm -rf $PAK.tar;
+
+pulldeploy() {
+cd bin && ./shaco config_test --luamod cc --command "cd .. && make && ./shaco-foot deploy"
+cd ..
+printf "Restart Game [Y/N]:"
+read YES
+if [ $YES = "Y" ] || [ $YES = "y" ]
+then
+./shaco-foot restart game
+else
+echo "exit"
+fi 
 }
 
 USAGE="Usage: shaco-foot [cmd] [startall] [start [svr .. ]] [stop [svr ..]] [ls] [startcmdd] [stopcmdd] [dist] -m"
@@ -146,16 +188,18 @@ done
 
 count
 case "$CMD" in
-restartall)     stop center;stop $SERVERS;startall;;
+restartall)     stopall;startall;;
 restart)        stop "$@";start "$@";;
 startall)       startall;;
 start)          start "$@";;
-stopall)        stop center;stop $SERVERS;;
+stopall)        stopall;;
 stop)           stop "$@";;
 startcmdd)      startcmdd;;
 stopcmdd)       stopcmdd;;
+startcn)        startcn;;
+startch)        startch;;
 ls)             ls;;
-cmd)            ./bin/shaco-cli --addr 127.0.0.1:18001 --cmd "$@";;
-dist)           svn up && make res && make clean && make;;
+deploy)         deploy;;
+pulldeploy)     pulldeploy;;
 *)              echo $USAGE;;
 esac
