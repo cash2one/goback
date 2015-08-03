@@ -23,12 +23,12 @@ shaco.start(function()
         assert(socket.send(id, s))
         read(id)
     end
-    
+   
+    read(id)
     if single_command then
-        rpc(single_command)
+        rpc(single_command..'\r\n')
         os.exit(1)
     end
-    read(id)
     linenoise.loadhistory(history_file)
     while true do
         local s = linenoise.linenoise("> ")
