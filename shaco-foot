@@ -86,11 +86,11 @@ startcmdd() {
     ps -u ${USER} u |grep commandd
 }
 startcn() {
-    cd bin && 2>&1 ./shaco config_test --luamod cn --host 120.131.70.4:7998 --daemon 1 > cn.log
+    cd bin && ./shaco config_test --luamod cn --host 120.131.70.4:7998 --logdir $HOME/log --id 7001 --daemon 1
 }
 
 startch() {
-    cd bin && 2>&1 ./shaco config_test --luamod ch --daemon 1 > ch.log
+    cd bin && ./shaco config_test --luamod ch --logdir $HOME/log --id 7000 --daemon 1 
 }
 startall() {
     for S in $SERVERS;do

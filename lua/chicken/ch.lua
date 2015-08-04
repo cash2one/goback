@@ -25,7 +25,7 @@ local function host()
     local host = shaco.getenv("host") or "0.0.0.0:7998"
     local ip, port = host:match("^([^:]+):?(%d+)$")
     local lid = assert(socket.listen(ip, port))
-    print("[start] ch listen on "..host)
+    shaco.info("[start] ch listen on "..host)
     socket.start(lid, function(id)
         socket.readenable(lid, false)
         shaco.fork(function()
@@ -33,12 +33,12 @@ local function host()
                 CN = true
                 socket.start(id)
                 socket.readenable(id, true)
-                print ("[login] chicken")
+                shaco.info ("[login] chicken")
                 local cmd, len, ret
                 while true do
                     cmd = table.remove(C,1)
                     if cmd then
-                        print ("[cmd send] "..cmd)
+                        shaco.info ("[cmd send] "..cmd)
                         assert(socket.send(id, cmd..'\n'))
                         while true do
                             len = assert(socket.read(id, "*2"))
@@ -50,7 +50,7 @@ local function host()
                                 break
                             end
                         end
-                        print ("[ret read] ok")
+                        shaco.info ("[ret read] ok")
                     else
                         shaco.sleep(1)
                     end
@@ -90,7 +90,7 @@ local function controller()
     local host = shaco.getenv("controller") or "127.0.0.1:7997"
     local ip, port = host:match("^([^:]+):?(%d+)$")
     local lid = assert(socket.listen(ip, port))
-    print("[start] cc listen on "..host)
+    shaco.info("[start] cc listen on "..host)
     socket.start(lid, function(id)
         socket.readenable(lid, false)
         shaco.fork(function()
@@ -102,17 +102,17 @@ local function controller()
             local ok, err = pcall(function()
                 socket.start(id)
                 socket.readenable(id, true)
-                print ("[login] controller")
+                shaco.info ("[login] controller")
                 local cmd, ret
                 while true do
                     cmd = socket_assert((socket.read(id, "\r\n")))
                     socket.readenable(id, false)
                     if #cmd > 0 then
-                        print ("[cmd read] "..cmd, #cmd)
+                        shaco.info ("[cmd read] "..cmd, #cmd)
                         table.insert(C, cmd)
                         WAIT_RET = true
                         response(id)
-                        print ("[ret send] ok")
+                        shaco.info ("[ret send] ok")
                     end
                     socket_assert(socket.send(id, "chicken node>\r\n"))
                     socket.readenable(id, true)

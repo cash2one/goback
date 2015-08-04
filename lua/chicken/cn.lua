@@ -8,20 +8,20 @@ local function send(id, s)
 end
 
 local function exec(id, cmd)
-    print ("[cmd] "..cmd)
+    shaco.info ("[cmd] "..cmd)
     local f = io.popen(cmd, "r")
     local result = f:read("*l")
-    print (result)
+    shaco.info (result)
     while result do
         --result = util.iconv(result, "gbk", "utf-8")
         if #result > 0 then
             send(id, result)
         end
         result = f:read("*l")
-        print (result)
+        shaco.info (result)
     end
     send(id, "") -- end of package 
-    print ("ok")
+    shaco.info ("ok")
     f:close()
 end
 
@@ -31,7 +31,7 @@ shaco.start(function()
     while true do
         local ok, err = pcall(function()
             local id = assert(socket.connect(ip, port))
-            print("[connected] "..host)
+            shaco.info("[connected] "..host)
             socket.readenable(id, true)
             local cmd
             while true do
@@ -40,7 +40,7 @@ shaco.start(function()
             end
         end)
         if not ok then
-            print(err)
+            shaco.error(err)
             shaco.sleep(3000)
         end
     end

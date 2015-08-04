@@ -1,3 +1,5 @@
+dofile "config_self"
+log="log"
 loglevel="DEBUG"
 connmax=1256
 --luapackpath="./base.lso"
