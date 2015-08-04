@@ -30,10 +30,10 @@ local function host()
         socket.readenable(lid, false)
         shaco.fork(function()
             local ok, err = pcall(function()
+                shaco.info ("[login] chicken")
                 CN = true
                 socket.start(id)
                 socket.readenable(id, true)
-                shaco.info ("[login] chicken")
                 local cmd, len, ret
                 while true do
                     cmd = table.remove(C,1)
@@ -94,15 +94,15 @@ local function controller()
     socket.start(lid, function(id)
         socket.readenable(lid, false)
         shaco.fork(function()
-            socket_assert((socket.send(id, "welcome to CH\r\n")))
-            if WAIT_RET then
-                response(id)
-            end
-            socket_assert(socket.send(id, "chicken node>\r\n"))
             local ok, err = pcall(function()
+                shaco.info ("[login] controller")
+                socket_assert((socket.send(id, "welcome to CH\r\n")))
+                if WAIT_RET then
+                    response(id)
+                end
+                socket_assert(socket.send(id, "chicken node>\r\n"))
                 socket.start(id)
                 socket.readenable(id, true)
-                shaco.info ("[login] controller")
                 local cmd, ret
                 while true do
                     cmd = socket_assert((socket.read(id, "\r\n")))
