@@ -159,7 +159,7 @@ cd bin && ./shaco config_test --luamod cc --command "cd .. && make && ./shaco-fo
 cd ..
 printf "Restart Game [Y/N]:"
 read YES
-if [ $YES = "Y" ] || [ $YES = "y" ]
+if [ "$YES" = "Y" ] || [ "$YES" = "y" ]
 then
 ./shaco-foot restart game
 else
