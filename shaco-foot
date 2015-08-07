@@ -155,7 +155,7 @@ deploy() {
 #tar -xf $PAK.tar && rm -rf $PAK.tar;
 
 pulldeploy() {
-cd bin && ./shaco config_test --luamod cc --command "cd .. && make && ./shaco-foot deploy"
+cd bin && ./shaco config_test --luamod cc --command "cd .. && svn up && make && ./shaco-foot deploy"
 cd ..
 printf "Restart Game [Y/N]:"
 read YES
